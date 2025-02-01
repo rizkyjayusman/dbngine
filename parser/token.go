@@ -25,12 +25,13 @@ const (
 	DELETE = "DELETE"
 )
 
-type OperatorType rune
+type OperatorType string
 
 const (
-	EQUALS = "="
-	AND    = "AND"
-	OR     = "OR"
+	WILDCARD = "*"
+	EQUALS   = "="
+	AND      = "AND"
+	OR       = "OR"
 )
 
 func GetKeywordOrIdentifier(value string) TokenType {

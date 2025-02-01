@@ -46,6 +46,26 @@ func TestLexer_Tokenize_SimpleSelectQuery(t *testing.T) {
 	validateTokenDetail(t, tests)
 }
 
+func TestLexer_Tokenize_SelectQueryWithWildcard(t *testing.T) {
+	query := "SELECT * FROM users"
+	lexer := NewLexer(query)
+	tokens, _ := lexer.Tokenize()
+
+	t.Run("Check tokens generated correctly", func(t *testing.T) {
+		if len(tokens) != 4 {
+			t.Errorf("expected 4 tokens, got %v", len(tokens))
+		}
+	})
+
+	tests := []TokenTest{
+		{"Check token at index 0 generated correctly", tokens[0], Token{Type: KEYWORD, Value: SELECT}},
+		{"Check token at index 1 generated correctly", tokens[1], Token{Type: OPERATOR, Value: WILDCARD}},
+		{"Check token at index 2 generated correctly", tokens[2], Token{Type: KEYWORD, Value: FROM}},
+		{"Check token at index 3 generated correctly", tokens[3], Token{Type: IDENTIFIER, Value: "users"}},
+	}
+	validateTokenDetail(t, tests)
+}
+
 func TestLexer_Tokenize_WithSemicolon(t *testing.T) {
 	lexer := NewLexer("SELECT id FROM users;")
 	tokens, _ := lexer.Tokenize()
