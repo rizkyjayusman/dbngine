@@ -1,5 +1,9 @@
 package parser
 
+import (
+	"errors"
+)
+
 type TokenValidatorParam struct {
 	pos int
 }
@@ -12,6 +16,188 @@ func NewParser(Tokens []Token) *Parser {
 	return &Parser{
 		Tokens: Tokens,
 	}
+}
+
+func (p *Parser) Parse() (ASTNode, error) {
+	if p.Tokens[0].Type != KEYWORD {
+		return nil, errors.New("expected KEYWORD")
+	}
+
+	var node ASTNode
+	var err error
+
+	if p.Tokens[0].Value == SELECT {
+		node, err = p.parseSelect(p.Tokens)
+	}
+
+	if err != nil {
+		return nil, err
+	}
+
+	return node, nil
+}
+
+func (p *Parser) parseSelect(tokens []Token) (*SelectStatement, error) {
+	param := TokenValidatorParam{pos: 0}
+
+	if tokens[0].Type != KEYWORD && tokens[0].Value != SELECT {
+		return &SelectStatement{}, nil
+	}
+
+	node := &SelectStatement{}
+
+	param.pos++
+	nextShouldDelimiter := false
+	for param.pos < len(p.Tokens) {
+
+		if p.Tokens[param.pos].Type == OPERATOR && p.Tokens[param.pos].Value == WILDCARD {
+			node.Columns = append(node.Columns, p.Tokens[param.pos].Value)
+			param.pos++
+			break
+		}
+
+		if !nextShouldDelimiter && p.Tokens[param.pos].Type != IDENTIFIER {
+			return node, errors.New("expected IDENTIFIER")
+		}
+
+		if p.Tokens[param.pos].Type != IDENTIFIER && p.Tokens[param.pos].Type != DELIMITER {
+			break
+		}
+
+		if p.Tokens[param.pos].Type == IDENTIFIER {
+			if nextShouldDelimiter {
+				return node, errors.New("expected IDENTIFIER")
+			}
+
+			node.Columns = append(node.Columns, p.Tokens[param.pos].Value)
+			nextShouldDelimiter = true
+		} else {
+			if !nextShouldDelimiter {
+				return node, errors.New("expected DELIMITER")
+			}
+
+			nextShouldDelimiter = false
+		}
+
+		param.pos++
+	}
+
+	if p.Tokens[param.pos].Type == KEYWORD && p.Tokens[param.pos].Value == FROM {
+		param.pos++
+		if p.Tokens[param.pos].Type != IDENTIFIER {
+			return node, errors.New("expected Table Name")
+		}
+
+		node.Table = p.Tokens[param.pos].Value
+		param.pos++
+	}
+
+	whereClause, err := p.parseWhere(&param)
+	node.WhereClause = whereClause
+
+	if err != nil {
+		return node, err
+	}
+
+	if param.pos < len(p.Tokens) {
+		if p.Tokens[param.pos].Type != SYMBOL && p.Tokens[param.pos].Value != ";" {
+			return node, errors.New("expected SYMBOL")
+		}
+
+		param.pos++
+	}
+
+	if param.pos == len(p.Tokens) {
+		return node, nil
+	}
+
+	return node, errors.New("expected EOF")
+}
+
+func (p *Parser) ParseWhere() (*WhereClause, error) {
+	pos := 0
+	var root *WhereClause
+
+	if pos >= len(p.Tokens) {
+		return root, nil
+	}
+
+	if p.Tokens[pos].Type != KEYWORD && p.Tokens[pos].Value != WHERE {
+		return root, nil
+	}
+
+	pos++
+	
+	root = p.parseWhereByToken(p.Tokens[pos:])
+
+	pos++
+
+	return root, nil
+}
+
+func (p *Parser) parseWhereByToken(tokens []Token) *WhereClause {
+	if len(tokens) == 3 {
+		return &WhereClause{
+			Left:  &WhereClause{Name: tokens[0].Value},
+			Type:  tokens[1].Value,
+			Right: &WhereClause{Value: tokens[2].Value},
+		}
+	}
+
+	return &WhereClause{
+		Type:  tokens[3].Value,
+		Left:  p.parseWhereByToken(tokens[:3]),
+		Right: p.parseWhereByToken(tokens[4:]),
+	}
+}
+
+func (p *Parser) parseWhere(param *TokenValidatorParam) (WhereClause, error) {
+	root := WhereClause{}
+
+	if param.pos < len(p.Tokens) && p.Tokens[param.pos].Type == KEYWORD && p.Tokens[param.pos].Value == WHERE {
+		param.pos++
+
+		var currentClause *WhereClause
+		for param.pos < len(p.Tokens) {
+			if p.Tokens[param.pos].Type != IDENTIFIER {
+				return root, errors.New("expected IDENTIFIER")
+			}
+
+			newClause := &WhereClause{Name: p.Tokens[param.pos].Value}
+			if currentClause == nil {
+				currentClause.Right = newClause
+			}
+			param.pos++
+
+			if p.Tokens[param.pos].Type != OPERATOR && p.Tokens[param.pos].Value != EQUALS {
+				return root, errors.New("expected EQUALS")
+			}
+
+			root.Type = p.Tokens[param.pos].Value
+			param.pos++
+
+			if p.Tokens[param.pos].Type != LITERAL {
+				return root, errors.New("expected LITERAL")
+			}
+
+			root.Right = &WhereClause{Name: p.Tokens[param.pos].Value}
+			param.pos++
+
+			if param.pos < len(p.Tokens) {
+				if p.Tokens[param.pos].Type == OPERATOR {
+					if p.Tokens[param.pos].Value != AND && p.Tokens[param.pos].Value != OR {
+						break
+					}
+
+					param.pos++
+				} else {
+					break
+				}
+			}
+		}
+	}
+
+	return root, nil
 }
 
 func (p *Parser) ValidateTokens() bool {

@@ -72,7 +72,13 @@ func (l *Lexer) Tokenize() ([]Token, error) {
 		}
 
 		if util.IsOperator(char) {
-			tokens = append(tokens, Token{Type: OPERATOR, Value: string(char)})
+			operator := string(char)
+			if util.IsOperator(input[pos+1]) {
+				operator = operator + string(input[pos+1])
+				pos++
+			}
+
+			tokens = append(tokens, Token{Type: OPERATOR, Value: operator})
 			pos++
 			continue
 		}

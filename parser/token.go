@@ -28,10 +28,14 @@ const (
 type OperatorType string
 
 const (
-	WILDCARD = "*"
-	EQUALS   = "="
-	AND      = "AND"
-	OR       = "OR"
+	WILDCARD         = "*"
+	EQUALS           = "="
+	LESS_THAN        = "<"
+	LESS_THAN_EQUALS = "<="
+	MORE_THAN        = ">"
+	MORE_THAN_EQUALS = ">="
+	AND              = "AND"
+	OR               = "OR"
 )
 
 func GetKeywordOrIdentifier(value string) TokenType {

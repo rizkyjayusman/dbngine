@@ -133,6 +133,98 @@ func TestLexer_Tokenize_SelectQueryWithWhereClause(t *testing.T) {
 	validateTokenDetail(t, tests)
 }
 
+func TestLexer_Tokenize_SelectQueryWithWhereClauseLessThanOperator(t *testing.T) {
+	lexer := NewLexer("SELECT id FROM users WHERE age < 18")
+	tokens, _ := lexer.Tokenize()
+
+	t.Run("Check tokens generated correctly", func(t *testing.T) {
+		if len(tokens) != 8 {
+			t.Errorf("expected 8 tokens, got %v", len(tokens))
+		}
+	})
+
+	tests := []TokenTest{
+		{"Check token at index 0 generated correctly", tokens[0], Token{Type: KEYWORD, Value: SELECT}},
+		{"Check token at index 1 generated correctly", tokens[1], Token{Type: IDENTIFIER, Value: "id"}},
+		{"Check token at index 2 generated correctly", tokens[2], Token{Type: KEYWORD, Value: FROM}},
+		{"Check token at index 3 generated correctly", tokens[3], Token{Type: IDENTIFIER, Value: "users"}},
+		{"Check token at index 4 generated correctly", tokens[4], Token{Type: KEYWORD, Value: WHERE}},
+		{"Check token at index 5 generated correctly", tokens[5], Token{Type: IDENTIFIER, Value: "age"}},
+		{"Check token at index 6 generated correctly", tokens[6], Token{Type: OPERATOR, Value: LESS_THAN}},
+		{"Check token at index 7 generated correctly", tokens[7], Token{Type: LITERAL, Value: "18"}},
+	}
+	validateTokenDetail(t, tests)
+}
+
+func TestLexer_Tokenize_SelectQueryWithWhereClauseLessThanEqualsOperator(t *testing.T) {
+	lexer := NewLexer("SELECT id FROM users WHERE age <= 18")
+	tokens, _ := lexer.Tokenize()
+
+	t.Run("Check tokens generated correctly", func(t *testing.T) {
+		if len(tokens) != 8 {
+			t.Errorf("expected 8 tokens, got %v", len(tokens))
+		}
+	})
+
+	tests := []TokenTest{
+		{"Check token at index 0 generated correctly", tokens[0], Token{Type: KEYWORD, Value: SELECT}},
+		{"Check token at index 1 generated correctly", tokens[1], Token{Type: IDENTIFIER, Value: "id"}},
+		{"Check token at index 2 generated correctly", tokens[2], Token{Type: KEYWORD, Value: FROM}},
+		{"Check token at index 3 generated correctly", tokens[3], Token{Type: IDENTIFIER, Value: "users"}},
+		{"Check token at index 4 generated correctly", tokens[4], Token{Type: KEYWORD, Value: WHERE}},
+		{"Check token at index 5 generated correctly", tokens[5], Token{Type: IDENTIFIER, Value: "age"}},
+		{"Check token at index 6 generated correctly", tokens[6], Token{Type: OPERATOR, Value: LESS_THAN_EQUALS}},
+		{"Check token at index 7 generated correctly", tokens[7], Token{Type: LITERAL, Value: "18"}},
+	}
+	validateTokenDetail(t, tests)
+}
+
+func TestLexer_Tokenize_SelectQueryWithWhereClauseMoreThanOperator(t *testing.T) {
+	lexer := NewLexer("SELECT id FROM users WHERE age > 18")
+	tokens, _ := lexer.Tokenize()
+
+	t.Run("Check tokens generated correctly", func(t *testing.T) {
+		if len(tokens) != 8 {
+			t.Errorf("expected 8 tokens, got %v", len(tokens))
+		}
+	})
+
+	tests := []TokenTest{
+		{"Check token at index 0 generated correctly", tokens[0], Token{Type: KEYWORD, Value: SELECT}},
+		{"Check token at index 1 generated correctly", tokens[1], Token{Type: IDENTIFIER, Value: "id"}},
+		{"Check token at index 2 generated correctly", tokens[2], Token{Type: KEYWORD, Value: FROM}},
+		{"Check token at index 3 generated correctly", tokens[3], Token{Type: IDENTIFIER, Value: "users"}},
+		{"Check token at index 4 generated correctly", tokens[4], Token{Type: KEYWORD, Value: WHERE}},
+		{"Check token at index 5 generated correctly", tokens[5], Token{Type: IDENTIFIER, Value: "age"}},
+		{"Check token at index 6 generated correctly", tokens[6], Token{Type: OPERATOR, Value: MORE_THAN}},
+		{"Check token at index 7 generated correctly", tokens[7], Token{Type: LITERAL, Value: "18"}},
+	}
+	validateTokenDetail(t, tests)
+}
+
+func TestLexer_Tokenize_SelectQueryWithWhereClauseMoreThanEqualsOperator(t *testing.T) {
+	lexer := NewLexer("SELECT id FROM users WHERE age >= 18")
+	tokens, _ := lexer.Tokenize()
+
+	t.Run("Check tokens generated correctly", func(t *testing.T) {
+		if len(tokens) != 8 {
+			t.Errorf("expected 8 tokens, got %v", len(tokens))
+		}
+	})
+
+	tests := []TokenTest{
+		{"Check token at index 0 generated correctly", tokens[0], Token{Type: KEYWORD, Value: SELECT}},
+		{"Check token at index 1 generated correctly", tokens[1], Token{Type: IDENTIFIER, Value: "id"}},
+		{"Check token at index 2 generated correctly", tokens[2], Token{Type: KEYWORD, Value: FROM}},
+		{"Check token at index 3 generated correctly", tokens[3], Token{Type: IDENTIFIER, Value: "users"}},
+		{"Check token at index 4 generated correctly", tokens[4], Token{Type: KEYWORD, Value: WHERE}},
+		{"Check token at index 5 generated correctly", tokens[5], Token{Type: IDENTIFIER, Value: "age"}},
+		{"Check token at index 6 generated correctly", tokens[6], Token{Type: OPERATOR, Value: MORE_THAN_EQUALS}},
+		{"Check token at index 7 generated correctly", tokens[7], Token{Type: LITERAL, Value: "18"}},
+	}
+	validateTokenDetail(t, tests)
+}
+
 func TestLexer_Tokenize_SelectQueryWithMultipleAndWhereClauses(t *testing.T) {
 	lexer := NewLexer("SELECT id FROM users WHERE name = \"marty\" AND age = 18")
 	tokens, _ := lexer.Tokenize()
