@@ -92,9 +92,8 @@ func (p *Parser) parseSelect(tokens []Token) (*SelectStatement, error) {
 		param.pos++
 	}
 
-	whereClause, err := p.parseWhere(&param)
+	whereClause, err := p.ParseWhere(&param)
 	node.WhereClause = whereClause
-
 	if err != nil {
 		return node, err
 	}
@@ -114,23 +113,27 @@ func (p *Parser) parseSelect(tokens []Token) (*SelectStatement, error) {
 	return node, errors.New("expected EOF")
 }
 
-func (p *Parser) ParseWhere() (*WhereClause, error) {
-	pos := 0
+func (p *Parser) ParseWhere(param *TokenValidatorParam) (*WhereClause, error) {
 	var root *WhereClause
 
-	if pos >= len(p.Tokens) {
+	if param.pos >= len(p.Tokens) {
 		return root, nil
 	}
 
-	if p.Tokens[pos].Type != KEYWORD && p.Tokens[pos].Value != WHERE {
+	if p.Tokens[param.pos].Type != KEYWORD && p.Tokens[param.pos].Value != WHERE {
 		return root, nil
 	}
 
-	pos++
-	
-	root = p.parseWhereByToken(p.Tokens[pos:])
+	param.pos++
 
-	pos++
+	root = p.parseWhereByToken(p.Tokens[param.pos:])
+
+	for param.pos < len(p.Tokens) {
+		if p.Tokens[param.pos].Type == KEYWORD {
+			break
+		}
+		param.pos++
+	}
 
 	return root, nil
 }
@@ -144,11 +147,17 @@ func (p *Parser) parseWhereByToken(tokens []Token) *WhereClause {
 		}
 	}
 
-	return &WhereClause{
-		Type:  tokens[3].Value,
-		Left:  p.parseWhereByToken(tokens[:3]),
-		Right: p.parseWhereByToken(tokens[4:]),
+	for i := len(tokens) - 2; i > 0; i -= 2 {
+		if tokens[i].Value == AND || tokens[i].Value == OR {
+			return &WhereClause{
+				Type:  tokens[i].Value,
+				Left:  p.parseWhereByToken(tokens[:i]),
+				Right: p.parseWhereByToken(tokens[i+1:]),
+			}
+		}
 	}
+
+	return nil
 }
 
 func (p *Parser) parseWhere(param *TokenValidatorParam) (WhereClause, error) {

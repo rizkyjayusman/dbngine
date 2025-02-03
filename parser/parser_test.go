@@ -221,83 +221,68 @@ func TestParser_Parse_SelectQueryWithWhereClause(t *testing.T) {
 		whereClauseTest := WhereClause{
 			Type:  EQUALS,
 			Left:  &WhereClause{Name: "id"},
-			Right: &WhereClause{Name: "1"},
+			Right: &WhereClause{Value: "1"},
 		}
 
-		validateWhereNode(whereClauseTest, selectStmt.WhereClause, t)
+		validateWhereNode(whereClauseTest, *selectStmt.WhereClause, t)
 	})
 }
 
-//func TestParser_Parse_SelectQueryWithMultipleAndWhereClauses(t *testing.T) {
-//	tokens := []Token{
-//		{Type: KEYWORD, Value: SELECT},
-//		{Type: IDENTIFIER, Value: "id"},
-//		{Type: KEYWORD, Value: FROM},
-//		{Type: IDENTIFIER, Value: "users"},
-//		{Type: KEYWORD, Value: WHERE},
-//		{Type: IDENTIFIER, Value: "name"},
-//		{Type: OPERATOR, Value: EQUALS},
-//		{Type: LITERAL, Value: "marty"},
-//		{Type: OPERATOR, Value: AND},
-//		{Type: IDENTIFIER, Value: "age"},
-//		{Type: OPERATOR, Value: EQUALS},
-//		{Type: LITERAL, Value: "18"},
-//	}
-//
-//	parser := NewParser(tokens)
-//	node, err := parser.Parse()
-//	if err != nil {
-//		t.Fatalf("parser parse failed: %v", err)
-//	}
-//
-//	selectStmt, ok := node.(*SelectStatement)
-//	if !ok {
-//		t.Errorf("Expected ASTNode to be of type *SelectStatement, but got %v", reflect.TypeOf(node))
-//		return
-//	}
-//
-//	t.Run("Check generated AST Nodes", func(t *testing.T) {
-//		expectedColumns := []string{"id"}
-//		if !reflect.DeepEqual(selectStmt.Columns, expectedColumns) {
-//			t.Errorf("expected column %v, got %v", expectedColumns, selectStmt.Columns)
-//		}
-//
-//		expectedTable := "users"
-//		if selectStmt.Table != expectedTable {
-//			t.Errorf("expected table %v, got %v", expectedTable, selectStmt.Table)
-//		}
-//
-//		whereClauseTests := WhereClause{
-//			Type: AND,
-//			Left: &WhereClause{
-//				Type:  EQUALS,
-//				Left:  &WhereClause{Name: "id"},
-//				Right: &WhereClause{Name: "1"},
-//			},
-//			Right: &WhereClause{
-//				Type:  EQUALS,
-//				Left:  &WhereClause{Name: "age"},
-//				Right: &WhereClause{Name: "18"},
-//			},
-//		}
-//
-//		validateWhereNode(whereClauseTests, selectStmt.WhereClause, t)
-//	})
-//}
-
-func validateWhereNode(expected WhereClause, current WhereClause, t *testing.T) {
-	if current.Left.Name != expected.Left.Name {
-		t.Errorf("Check where clauses Column: expected %v, got %v", expected.Left.Name, current.Left.Name)
+func TestParser_Parse_SelectQueryWithMultipleAndWhereClauses(t *testing.T) {
+	tokens := []Token{
+		{Type: KEYWORD, Value: SELECT},
+		{Type: IDENTIFIER, Value: "id"},
+		{Type: KEYWORD, Value: FROM},
+		{Type: IDENTIFIER, Value: "users"},
+		{Type: KEYWORD, Value: WHERE},
+		{Type: IDENTIFIER, Value: "name"},
+		{Type: OPERATOR, Value: EQUALS},
+		{Type: LITERAL, Value: "marty"},
+		{Type: OPERATOR, Value: AND},
+		{Type: IDENTIFIER, Value: "age"},
+		{Type: OPERATOR, Value: EQUALS},
+		{Type: LITERAL, Value: "18"},
 	}
 
-	if current.Type != expected.Type {
-		t.Errorf("Check where clauses Operator: expected %v, got %v", expected.Type, current.Type)
+	parser := NewParser(tokens)
+	node, err := parser.Parse()
+	if err != nil {
+		t.Fatalf("parser parse failed: %v", err)
 	}
 
-	if current.Right.Value != expected.Right.Value {
-		t.Errorf("Check where clauses Value: expected %v, got %v", expected.Right.Value, current.Right.Value)
+	selectStmt, ok := node.(*SelectStatement)
+	if !ok {
+		t.Errorf("Expected ASTNode to be of type *SelectStatement, but got %v", reflect.TypeOf(node))
+		return
 	}
 
+	t.Run("Check generated AST Nodes", func(t *testing.T) {
+		expectedColumns := []string{"id"}
+		if !reflect.DeepEqual(selectStmt.Columns, expectedColumns) {
+			t.Errorf("expected column %v, got %v", expectedColumns, selectStmt.Columns)
+		}
+
+		expectedTable := "users"
+		if selectStmt.Table != expectedTable {
+			t.Errorf("expected table %v, got %v", expectedTable, selectStmt.Table)
+		}
+
+		whereClauseTests := WhereClause{
+			Type: AND,
+			Left: &WhereClause{
+				Type:  EQUALS,
+				Left:  &WhereClause{Name: "id"},
+				Right: &WhereClause{Name: "1"},
+			},
+			Right: &WhereClause{
+				Type:  EQUALS,
+				Left:  &WhereClause{Name: "age"},
+				Right: &WhereClause{Name: "18"},
+			},
+		}
+
+		validateWhereNode(whereClauseTests, *selectStmt.WhereClause, t)
+	})
 }
 
 func TestParser_Parse_SelectQueryWithMultipleAndWhereClausesAndOrOperator(t *testing.T) {
@@ -483,13 +468,13 @@ func TestParser_ParseWhere_Equals(t *testing.T) {
 	}
 
 	parser := NewParser(tokens)
-	node, _ := parser.ParseWhere()
+	node, _ := parser.ParseWhere(&TokenValidatorParam{pos: 0})
 
 	t.Run("Check generated AST Nodes", func(t *testing.T) {
 		whereClauseTest := WhereClause{
 			Type:  EQUALS,
 			Left:  &WhereClause{Name: "id"},
-			Right: &WhereClause{Name: "1"},
+			Right: &WhereClause{Value: "1"},
 		}
 
 		validateWhereNode(whereClauseTest, *node, t)
@@ -509,7 +494,7 @@ func TestParser_ParseWhere_MultipleEqualsWithAndOperator(t *testing.T) {
 	}
 
 	parser := NewParser(tokens)
-	node, _ := parser.ParseWhere()
+	node, _ := parser.ParseWhere(&TokenValidatorParam{pos: 0})
 
 	t.Run("Check generated AST Nodes", func(t *testing.T) {
 		whereClauseTest := WhereClause{
@@ -543,7 +528,7 @@ func TestParser_ParseWhere_MultipleEqualsWithOrOperator(t *testing.T) {
 	}
 
 	parser := NewParser(tokens)
-	node, _ := parser.ParseWhere()
+	node, _ := parser.ParseWhere(&TokenValidatorParam{pos: 0})
 
 	t.Run("Check generated AST Nodes", func(t *testing.T) {
 		whereClauseTest := WhereClause{
@@ -581,7 +566,7 @@ func TestParser_ParseWhere_WithMultipleAndOperator(t *testing.T) {
 	}
 
 	parser := NewParser(tokens)
-	node, _ := parser.ParseWhere()
+	node, _ := parser.ParseWhere(&TokenValidatorParam{pos: 0})
 
 	t.Run("Check generated AST Nodes", func(t *testing.T) {
 		whereClauseTest := WhereClause{
@@ -627,7 +612,7 @@ func TestParser_ParseWhere_WithMultipleOrOperator(t *testing.T) {
 	}
 
 	parser := NewParser(tokens)
-	node, _ := parser.ParseWhere()
+	node, _ := parser.ParseWhere(&TokenValidatorParam{pos: 0})
 
 	t.Run("Check generated AST Nodes", func(t *testing.T) {
 		whereClauseTest := WhereClause{
@@ -673,7 +658,7 @@ func TestParser_ParseWhere_WithAndOperatorBeforeOrOperator(t *testing.T) {
 	}
 
 	parser := NewParser(tokens)
-	node, _ := parser.ParseWhere()
+	node, _ := parser.ParseWhere(&TokenValidatorParam{pos: 0})
 
 	t.Run("Check generated AST Nodes", func(t *testing.T) {
 		whereClauseTest := WhereClause{
@@ -700,4 +685,19 @@ func TestParser_ParseWhere_WithAndOperatorBeforeOrOperator(t *testing.T) {
 
 		validateWhereNode(whereClauseTest, *node, t)
 	})
+}
+
+func validateWhereNode(expected WhereClause, current WhereClause, t *testing.T) {
+	if current.Left.Name != expected.Left.Name {
+		t.Errorf("Check where clauses Column: expected %v, got %v", expected.Left.Name, current.Left.Name)
+	}
+
+	if current.Type != expected.Type {
+		t.Errorf("Check where clauses Operator: expected %v, got %v", expected.Type, current.Type)
+	}
+
+	if current.Right.Value != expected.Right.Value {
+		t.Errorf("Check where clauses Value: expected %v, got %v", expected.Right.Value, current.Right.Value)
+	}
+
 }

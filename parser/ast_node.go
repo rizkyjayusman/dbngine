@@ -6,7 +6,7 @@ type ASTNode interface{}
 type SelectStatement struct {
 	Columns     []string
 	Table       string
-	WhereClause WhereClause
+	WhereClause *WhereClause
 }
 
 type WhereClause struct {
