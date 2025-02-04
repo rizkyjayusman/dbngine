@@ -9,6 +9,18 @@ type SelectStatement struct {
 	WhereClause *WhereClause
 }
 
+type InsertStatement struct {
+	Table   string
+	Columns []string
+	Values  []string
+}
+
+type UpdateStatement struct {
+	Table       string
+	Set         map[string]string
+	WhereClause *WhereClause
+}
+
 type WhereClause struct {
 	Type  string
 	Left  *WhereClause

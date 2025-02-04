@@ -28,6 +28,10 @@ func (p *Parser) Parse() (ASTNode, error) {
 
 	if p.Tokens[0].Value == SELECT {
 		node, err = p.parseSelect(p.Tokens)
+	} else if p.Tokens[0].Value == INSERT {
+		node, err = p.parseInsert(p.Tokens)
+	} else if p.Tokens[0].Value == UPDATE {
+		node, err = p.parseUpdate(p.Tokens)
 	}
 
 	if err != nil {
@@ -91,6 +95,171 @@ func (p *Parser) parseSelect(tokens []Token) (*SelectStatement, error) {
 		node.Table = p.Tokens[param.pos].Value
 		param.pos++
 	}
+
+	whereClause, err := p.ParseWhere(&param)
+	node.WhereClause = whereClause
+	if err != nil {
+		return node, err
+	}
+
+	if param.pos < len(p.Tokens) {
+		if p.Tokens[param.pos].Type != SYMBOL && p.Tokens[param.pos].Value != ";" {
+			return node, errors.New("expected SYMBOL")
+		}
+
+		param.pos++
+	}
+
+	if param.pos == len(p.Tokens) {
+		return node, nil
+	}
+
+	return node, errors.New("expected EOF")
+}
+
+func (p *Parser) parseInsert(tokens []Token) (ASTNode, error) {
+	param := TokenValidatorParam{pos: 0}
+
+	param.pos++
+
+	node := &InsertStatement{}
+
+	if tokens[param.pos].Type != KEYWORD && tokens[param.pos].Value != INTO {
+		return node, errors.New("expected INTO")
+	}
+
+	param.pos++
+
+	if tokens[param.pos].Type != IDENTIFIER {
+		return node, errors.New("expected IDENTIFIER")
+	}
+
+	node.Table = p.Tokens[param.pos].Value
+	param.pos++
+
+	if tokens[param.pos].Type == SYMBOL && tokens[param.pos].Value == "(" {
+		param.pos++
+		nextShouldDelimiter := false
+		for param.pos < len(tokens) {
+			if tokens[param.pos].Type == IDENTIFIER {
+				if nextShouldDelimiter {
+					return node, errors.New("expected IDENTIFIER")
+				}
+
+				node.Columns = append(node.Columns, p.Tokens[param.pos].Value)
+				nextShouldDelimiter = true
+				param.pos++
+			} else if tokens[param.pos].Type == DELIMITER {
+				if !nextShouldDelimiter {
+					return node, errors.New("expected DELIMITER")
+				}
+
+				nextShouldDelimiter = false
+				param.pos++
+			} else if tokens[param.pos].Value == ")" {
+				param.pos++
+				break
+			} else {
+				return node, errors.New("expected DELIMITER or SYMBOL")
+			}
+		}
+
+		if tokens[param.pos].Type != KEYWORD && tokens[param.pos].Value != VALUES {
+			return node, errors.New("expected VALUES")
+		}
+
+		param.pos++
+
+		if tokens[param.pos].Type == SYMBOL && tokens[param.pos].Value == "(" {
+			param.pos++
+			nextShouldDelimiter := false
+			for param.pos < len(tokens) {
+				if tokens[param.pos].Type == LITERAL {
+					if nextShouldDelimiter {
+						return node, errors.New("expected LITERAL")
+					}
+
+					node.Values = append(node.Values, p.Tokens[param.pos].Value)
+					nextShouldDelimiter = true
+					param.pos++
+				} else if tokens[param.pos].Type == DELIMITER {
+					if !nextShouldDelimiter {
+						return node, errors.New("expected DELIMITER")
+					}
+
+					nextShouldDelimiter = false
+					param.pos++
+				} else if tokens[param.pos].Value == ")" {
+					param.pos++
+					break
+				} else {
+					return node, errors.New("expected DELIMITER or SYMBOL")
+				}
+			}
+
+			if param.pos == len(tokens) {
+				return node, nil
+			}
+		}
+	}
+
+	return node, errors.New("expected EOF")
+}
+
+func (p *Parser) parseUpdate(tokens []Token) (ASTNode, error) {
+	param := TokenValidatorParam{pos: 0}
+	param.pos++
+
+	node := &UpdateStatement{}
+
+	if tokens[param.pos].Type != IDENTIFIER {
+		return node, errors.New("expected IDENTIFIER")
+	}
+
+	node.Table = p.Tokens[param.pos].Value
+	param.pos++
+
+	if tokens[param.pos].Type != KEYWORD && tokens[param.pos].Value != SET {
+		return node, errors.New("expected SET")
+	}
+
+	sets := map[string]string{}
+
+	param.pos++
+	for param.pos < len(tokens) {
+		if tokens[param.pos].Type != IDENTIFIER {
+			return node, errors.New("expected IDENTIFIER")
+		}
+
+		column := tokens[param.pos].Value
+		param.pos++
+
+		if tokens[param.pos].Type == OPERATOR && tokens[param.pos].Value != EQUALS {
+			return node, errors.New("expected EQUALS")
+		}
+
+		param.pos++
+
+		if tokens[param.pos].Type != LITERAL {
+			return node, errors.New("expected LITERAL")
+		}
+
+		value := tokens[param.pos].Value
+		sets[column] = value
+		param.pos++
+
+		if tokens[param.pos].Type == DELIMITER && tokens[param.pos].Value == "," {
+			param.pos++
+		} else {
+			break
+		}
+	}
+
+	if len(sets) == 0 {
+		return node, errors.New("expected SET")
+	}
+
+	node.Set = sets
 
 	whereClause, err := p.ParseWhere(&param)
 	node.WhereClause = whereClause

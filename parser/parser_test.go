@@ -285,7 +285,7 @@ func TestParser_Parse_SelectQueryWithMultipleAndWhereClauses(t *testing.T) {
 	})
 }
 
-func TestParser_Parse_SelectQueryWithMultipleAndWhereClausesAndOrOperator(t *testing.T) {
+func TestParser_Parse_SelectQueryWithWhereClauseOrOperator(t *testing.T) {
 	tokens := []Token{
 		{Type: KEYWORD, Value: SELECT},
 		{Type: IDENTIFIER, Value: "id"},
@@ -302,14 +302,47 @@ func TestParser_Parse_SelectQueryWithMultipleAndWhereClausesAndOrOperator(t *tes
 	}
 
 	parser := NewParser(tokens)
-	t.Run("Check validation of format query", func(t *testing.T) {
-		if !parser.ValidateTokens() {
-			t.Errorf("invalid formats.")
+	node, err := parser.Parse()
+	if err != nil {
+		t.Fatalf("parser parse failed: %v", err)
+	}
+
+	selectStmt, ok := node.(*SelectStatement)
+	if !ok {
+		t.Errorf("Expected ASTNode to be of type *SelectStatement, but got %v", reflect.TypeOf(node))
+		return
+	}
+
+	t.Run("Check generated AST Nodes", func(t *testing.T) {
+		expectedColumns := []string{"id"}
+		if !reflect.DeepEqual(selectStmt.Columns, expectedColumns) {
+			t.Errorf("expected column %v, got %v", expectedColumns, selectStmt.Columns)
 		}
+
+		expectedTable := "users"
+		if selectStmt.Table != expectedTable {
+			t.Errorf("expected table %v, got %v", expectedTable, selectStmt.Table)
+		}
+
+		whereClauseTests := WhereClause{
+			Type: OR,
+			Left: &WhereClause{
+				Type:  EQUALS,
+				Left:  &WhereClause{Name: "name"},
+				Right: &WhereClause{Name: "marty"},
+			},
+			Right: &WhereClause{
+				Type:  EQUALS,
+				Left:  &WhereClause{Name: "age"},
+				Right: &WhereClause{Name: "18"},
+			},
+		}
+
+		validateWhereNode(whereClauseTests, *selectStmt.WhereClause, t)
 	})
 }
 
-func TestParser_ValidateTokens_SimpleInsertQuery(t *testing.T) {
+func TestParser_Parse_SimpleInsertQuery(t *testing.T) {
 	tokens := []Token{
 		{Type: KEYWORD, Value: INSERT},
 		{Type: KEYWORD, Value: INTO},
@@ -332,9 +365,30 @@ func TestParser_ValidateTokens_SimpleInsertQuery(t *testing.T) {
 	}
 
 	parser := NewParser(tokens)
-	t.Run("Check validation of format query", func(t *testing.T) {
-		if !parser.ValidateTokens() {
-			t.Errorf("invalid formats.")
+	node, err := parser.Parse()
+	if err != nil {
+		t.Fatalf("parser parse failed: %v", err)
+	}
+
+	insertStmt, ok := node.(*InsertStatement)
+	if !ok {
+		t.Errorf("Expected ASTNode to be of type *InserStatement, but got %v", reflect.TypeOf(node))
+		return
+	}
+	t.Run("Check generated AST Nodes", func(t *testing.T) {
+		expectedColumns := []string{"id", "name", "age"}
+		if !reflect.DeepEqual(insertStmt.Columns, expectedColumns) {
+			t.Errorf("expected column %v, got %v", expectedColumns, insertStmt.Columns)
+		}
+
+		expectedTable := "users"
+		if insertStmt.Table != expectedTable {
+			t.Errorf("expected table %v, got %v", expectedTable, insertStmt.Table)
+		}
+
+		expectedValues := []string{"1", "marty", "18"}
+		if !reflect.DeepEqual(insertStmt.Values, expectedValues) {
+			t.Errorf("expected column %v, got %v", expectedValues, insertStmt.Values)
 		}
 	})
 }
@@ -354,10 +408,36 @@ func TestParser_ValidateTokens_SimpleUpdateQuery(t *testing.T) {
 	}
 
 	parser := NewParser(tokens)
-	t.Run("Check validation of format query", func(t *testing.T) {
-		if !parser.ValidateTokens() {
-			t.Errorf("invalid formats.")
+	node, err := parser.Parse()
+	if err != nil {
+		t.Fatalf("parser parse failed: %v", err)
+	}
+
+	updateStmt, ok := node.(*UpdateStatement)
+	if !ok {
+		t.Errorf("Expected ASTNode to be of type *UpdateStatement, but got %v", reflect.TypeOf(node))
+		return
+	}
+	t.Run("Check generated AST Nodes", func(t *testing.T) {
+		expectedTable := "users"
+		if updateStmt.Table != expectedTable {
+			t.Errorf("expected table %v, got %v", expectedTable, updateStmt.Table)
 		}
+
+		expectedSets := map[string]string{
+			"name": "marty",
+		}
+		if !reflect.DeepEqual(updateStmt.Set, expectedSets) {
+			t.Errorf("expected column %v, got %v", expectedSets, updateStmt.Set)
+		}
+
+		whereClauseTests := WhereClause{
+			Type:  EQUALS,
+			Left:  &WhereClause{Name: "id"},
+			Right: &WhereClause{Value: "1"},
+		}
+
+		validateWhereNode(whereClauseTests, *updateStmt.WhereClause, t)
 	})
 }
 
@@ -377,13 +457,52 @@ func TestParser_ValidateTokens_UpdateQueryMultiColumnChanges(t *testing.T) {
 		{Type: IDENTIFIER, Value: "id"},
 		{Type: OPERATOR, Value: EQUALS},
 		{Type: LITERAL, Value: "1"},
+		{Type: OPERATOR, Value: AND},
+		{Type: IDENTIFIER, Value: "age"},
+		{Type: OPERATOR, Value: EQUALS},
+		{Type: LITERAL, Value: "18"},
 	}
 
 	parser := NewParser(tokens)
-	t.Run("Check validation of format query", func(t *testing.T) {
-		if !parser.ValidateTokens() {
-			t.Errorf("invalid formats.")
+	node, err := parser.Parse()
+	if err != nil {
+		t.Fatalf("parser parse failed: %v", err)
+	}
+
+	updateStmt, ok := node.(*UpdateStatement)
+	if !ok {
+		t.Errorf("Expected ASTNode to be of type *UpdateStatement, but got %v", reflect.TypeOf(node))
+		return
+	}
+	t.Run("Check generated AST Nodes", func(t *testing.T) {
+		expectedTable := "users"
+		if updateStmt.Table != expectedTable {
+			t.Errorf("expected table %v, got %v", expectedTable, updateStmt.Table)
 		}
+
+		expectedSets := map[string]string{
+			"name":  "marty",
+			"email": "marty.mcfly@thefuture.com",
+		}
+		if !reflect.DeepEqual(updateStmt.Set, expectedSets) {
+			t.Errorf("expected column %v, got %v", expectedSets, updateStmt.Set)
+		}
+
+		whereClauseTests := WhereClause{
+			Type: AND,
+			Left: &WhereClause{
+				Type:  EQUALS,
+				Left:  &WhereClause{Name: "id"},
+				Right: &WhereClause{Name: "1"},
+			},
+			Right: &WhereClause{
+				Type:  EQUALS,
+				Left:  &WhereClause{Name: "age"},
+				Right: &WhereClause{Name: "18"},
+			},
+		}
+
+		validateWhereNode(whereClauseTests, *updateStmt.WhereClause, t)
 	})
 }
 
