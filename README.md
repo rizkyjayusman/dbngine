@@ -41,7 +41,7 @@ cd dbengine
 **Build and Run**
 
 ```
-go build -o mysqllite
+go build -o dbengine
 ./dbengine
 ```
 
@@ -51,7 +51,7 @@ go build -o mysqllite
 
 Run the executable:
 ```
-./mysqllite
+./dbengine
 ```
 
 ### Execute SQL Queries
@@ -97,38 +97,38 @@ DELETE FROM users WHERE id = 1;
 
 **Main Components:**
 
-- **Command Line Interface (CLI)** → Menerima query dari user.
-- **Query Input Handler** → Mengirimkan query ke Lexer.
+- **Command Line Interface (CLI)** → Input query from user.
+- **Query Input Handler** → Send query input to Lexer.
 
 ### SQL Parser
 
 1. **Lexing & Parsing**
-- **Lexer** → Memecah query menjadi token.
-- **Tokenizer** → Mengelompokkan token berdasarkan jenisnya (keyword, identifier, operator).
-- **Query Parser** → Menganalisis token dan membentuk struktur sintaks.
+- **Lexer** → Break query into tokens.
+- **Tokenizer** → Populate token based on its type (keyword, identifier, operator).
+- **Query Parser** → Analysis tokens and construct it as AST nodes.
 2. **Query Optimization**
-- **Query Rewriter** → Menyederhanakan query jika memungkinkan.
-- **Execution Plan Generator** → Menentukan cara terbaik untuk mengeksekusi query.
-- **Cost Estimator (Basic)** → Menilai performa berbagai cara eksekusi query.
+- **Query Rewriter** → Simplify the query if necessary.
+- **Execution Plan Generator** → Plan the best ways to execute the query.
+- **Cost Estimator (Basic)** → Measure performance of how query executed.
 
 **Query Executor**
 
-- **Query Executor** → Mengeksekusi query berdasarkan execution plan.
-- **Result Formatter** → Mengubah hasil query menjadi format yang bisa ditampilkan di CLI.
+- **Query Executor** → Execute query based on execution plan.
+- **Result Formatter** → Print the query result CLI formatted.
 
 **Storage Engine**
 
 1. **Data Management**
-- **Table Manager** → Mengatur metadata tabel.
-- **Row & Column Storage** → Menyimpan data dalam format row-based atau column-based.
+- **Table Manager** → Managing table metadata information.
+- **Row & Column Storage** → Store data in row-based/column-based format.
 2. Indexing System
-- **B-Tree / Hash Index** → Mempercepat pencarian data.
+- **B-Tree / Hash Index** → Better performance for searching.
 3. **Transaction & Concurrency**
-- **Write-Ahead Logging (WAL)** → Menyimpan log sebelum menulis ke disk.
-- **Locking Mechanism** → Mengelola transaksi paralel.
+- **Write-Ahead Logging (WAL)** → Store log before write to disk.
+- **Locking Mechanism** → Handle paralel transaction.
 4. **Data Persistence**
-- **File Storage System (Basic)** → Menyimpan data di file teks atau binary.
-- **Buffer Pool** → Cache untuk menghindari akses langsung ke disk.
+- **File Storage System (Basic)** → Store data on binary file.
+- **Buffer Pool** → Cache for prevent direct access to disk (direct acess necessary if the cache was none).
 
 ## Contributing
 
