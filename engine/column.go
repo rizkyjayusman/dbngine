@@ -1,8 +1,8 @@
 package engine
 
 type Column struct {
-	Name string
-	Type DataType
+	Name string   `json:"name"`
+	Type DataType `json:"type"`
 }
 
 func NewColumn(name string, dataType DataType) *Column {

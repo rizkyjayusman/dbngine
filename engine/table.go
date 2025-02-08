@@ -1,8 +1,8 @@
 package engine
 
 type Table struct {
-	Name    string
-	Columns []Column
+	Name    string   `json:"name"`
+	Columns []Column `json:"columns"`
 }
 
 func NewTable(name string, columns []Column) *Table {
