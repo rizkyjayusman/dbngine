@@ -18,6 +18,11 @@ func NewParser(Tokens []Token) *Parser {
 	}
 }
 
+func (p *Parser) SetToken(tokens []Token) error {
+	p.Tokens = tokens
+	return nil
+}
+
 func (p *Parser) Parse() (ASTNode, error) {
 	if p.Tokens[0].Type != KEYWORD {
 		return nil, errors.New("expected KEYWORD")

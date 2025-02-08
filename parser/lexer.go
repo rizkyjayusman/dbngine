@@ -9,6 +9,15 @@ type Lexer struct {
 	Input string
 }
 
+func InitLexer() *Lexer {
+	return &Lexer{}
+}
+
+func (l *Lexer) SetInput(input string) error {
+	l.Input = input
+	return nil
+}
+
 func NewLexer(input string) *Lexer {
 	return &Lexer{
 		Input: input,
