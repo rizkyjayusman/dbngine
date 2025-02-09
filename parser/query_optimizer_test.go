@@ -16,12 +16,16 @@ func TestSelectStatement_Optimize_WildcardSelect(t *testing.T) {
 		},
 	})
 
+	selectQueryOptimizer := SelectQueryOptimizer{
+		Schema: schema,
+	}
+
 	selectStmt := &SelectStatement{
 		Table:   "users",
 		Columns: []string{"*"},
 	}
 
-	err := selectStmt.Optimize(schema)
+	err := selectQueryOptimizer.Optimize(selectStmt)
 	t.Run("Optimize AST nodes", func(t *testing.T) {
 		if err != nil {
 			t.Error(err)

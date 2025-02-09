@@ -2,18 +2,24 @@ package parser
 
 import "dbngin3/engine"
 
-type QueryOptimizer struct{}
+type QueryOptimizer interface {
+	Optimize(node *ASTNode)
+}
 
-func (s *SelectStatement) Optimize(schema *engine.SchemaManager) error {
-	table, err := schema.GetTable(s.Table)
+type SelectQueryOptimizer struct {
+	Schema *engine.SchemaManager
+}
+
+func (s *SelectQueryOptimizer) Optimize(selectStmt *SelectStatement) error {
+	table, err := s.Schema.GetTable(selectStmt.Table)
 	if err != nil {
 		return err
 	}
 
-	if s.Columns[0] == WILDCARD {
-		s.Columns = []string{}
+	if selectStmt.Columns[0] == WILDCARD {
+		selectStmt.Columns = []string{}
 		for i := range table.Columns {
-			s.Columns = append(s.Columns, table.Columns[i].Name)
+			selectStmt.Columns = append(selectStmt.Columns, table.Columns[i].Name)
 		}
 	}
 

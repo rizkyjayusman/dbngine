@@ -2,6 +2,7 @@ package api
 
 import (
 	"bufio"
+	"dbngin3/engine"
 	"dbngin3/parser"
 	"fmt"
 	"os"
@@ -9,14 +10,19 @@ import (
 )
 
 type CLI struct {
-	lexer  *parser.Lexer
-	parser *parser.Parser
+	lexer            *parser.Lexer
+	parser           *parser.Parser
+	semanticAnalyzer *parser.SelectSemanticAnalyzer
+	queryOptimizer   *parser.SelectQueryOptimizer
 }
 
 func NewCLI() *CLI {
+	schema := engine.NewSchemaManager()
 	return &CLI{
-		lexer:  &parser.Lexer{},
-		parser: &parser.Parser{},
+		lexer:            &parser.Lexer{},
+		parser:           &parser.Parser{},
+		semanticAnalyzer: &parser.SelectSemanticAnalyzer{Schema: schema},
+		queryOptimizer:   &parser.SelectQueryOptimizer{Schema: schema},
 	}
 }
 
@@ -59,6 +65,14 @@ func (cli *CLI) ExecuteQuery(query string) error {
 	}
 
 	if node, ok := nodes.(*parser.SelectStatement); ok {
+		if err := cli.semanticAnalyzer.Analyze(node); err != nil {
+			return err
+		}
+
+		if err := cli.queryOptimizer.Optimize(node); err != nil {
+			return err
+		}
+
 		fmt.Println("Select Statement")
 		fmt.Println("Table: ", node.Table)
 		fmt.Println("Columns: ", node.Columns)

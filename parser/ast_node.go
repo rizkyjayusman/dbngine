@@ -28,3 +28,26 @@ type WhereClause struct {
 	Name  string
 	Value string
 }
+
+func (w *WhereClause) GetColumnNames() []string {
+	return getColumns(w)
+}
+
+func getColumns(clause *WhereClause) []string {
+	res := make([]string, 0)
+	if clause == nil {
+		return res
+	}
+
+	if clause.Left != nil && len(clause.Left.Name) > 0 {
+		return append(res, clause.Left.Name)
+	}
+
+	left := getColumns(clause.Left)
+	right := getColumns(clause.Right)
+
+	res = append(res, left...)
+	res = append(res, right...)
+
+	return res
+}

@@ -5,22 +5,36 @@ import (
 	"errors"
 )
 
-func (s *SelectStatement) Analyze(schema *engine.SchemaManager) error {
-	table, err := schema.GetTable(s.Table)
+type SemanticAnalyzer interface {
+	Analyze(node *ASTNode) error
+}
+
+type SelectSemanticAnalyzer struct {
+	Schema *engine.SchemaManager
+}
+
+func (s *SelectSemanticAnalyzer) Analyze(selectStmt *SelectStatement) error {
+	table, err := s.Schema.GetTable(selectStmt.Table)
 	if err != nil {
 		return errors.New("table not found in schema ")
 	}
 
-	for i := range s.Columns {
-		if !containsColumn(table.Columns, s.Columns[i]) {
+	for i := range selectStmt.Columns {
+		if selectStmt.Columns[i] == WILDCARD {
+			break
+		}
+		
+		if !containsColumn(table.Columns, selectStmt.Columns[i]) {
 			return errors.New("column not found in table ")
 		}
 	}
 
-	//whereClause := schema.FindWhere(s.WhereClause)
-	//if !whereClause {
-	//	return errors.New("where clause not found in schema ")
-	//}
+	whereColumns := selectStmt.WhereClause.GetColumnNames()
+	for i := range whereColumns {
+		if !containsColumn(table.Columns, whereColumns[i]) {
+			return errors.New("column not found in table for where clause")
+		}
+	}
 
 	return nil
 }
