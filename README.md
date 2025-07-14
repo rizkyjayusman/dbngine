@@ -58,7 +58,7 @@ Run the executable:
 
 Once running, you can interact with the database using SQL-like commands.
 
-****Creating a Table
+**Creating a Table**
 ```
 CREATE TABLE users (
 id INT PRIMARY KEY,
